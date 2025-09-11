@@ -6,11 +6,14 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
+    "module": "node16",
     "target": "es2020",
-    "moduleResolution": "nodenext",
+    "moduleResolution": "node16",
     "esModuleInterop": true,
+    "emitDecoratorMetadata": false,
     "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "allowJs": true,
 
     // Other Outputs
     "sourceMap": true,
