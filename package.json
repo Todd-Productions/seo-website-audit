@@ -19,11 +19,14 @@
   "author": "Stanton Creative Media LLC.",
   "packageManager": "pnpm@10.15.1",
   "dependencies": {
+    "axios": "^1.12.2",
     "crawlee": "^3.14.1",
     "playwright": "^1.55.0",
-    "prompts": "^2.4.2"
+    "prompts": "^2.4.2",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
+    "@types/xml2js": "^0.4.14",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "tsc": "^2.0.4",
