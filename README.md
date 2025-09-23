@@ -22,9 +22,3 @@ pnpm exec playwright install # Possibly need to do this
    5. Check for missing alt tags
    6. Performs a lighthouse audit
 5. Generates a report of results (JSON) and performance score
-
-## Prompt workflow
-
-1. Prompt the user for the URL of the website to audit
-2. See if website has HTTP or HTTPS (correct protocol)
-3.
