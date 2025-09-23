@@ -46,15 +46,25 @@ export class UrlStatus {
 export async function getUrlStatus(url: string) {
   const res = await axios.get(url, { maxRedirects: 0, validateStatus: null });
 
+  // Redirect
   if (res.status >= 300 && res.status < 400 && res.headers.location) {
-    return new UrlStatus("redirect", res.status).setLocation(
-      res.headers.location
-    );
-  } else if (res.status >= 400 && res.status < 500) {
+    const status = new UrlStatus("redirect", res.status);
+    status.setLocation(res.headers.location);
+    return status;
+  }
+
+  // Client Error
+  else if (res.status >= 400 && res.status < 500) {
     return new UrlStatus("client_error", res.status);
-  } else if (res.status >= 500) {
+  }
+
+  // Server Error
+  else if (res.status >= 500) {
     return new UrlStatus("server_error", res.status);
-  } else {
+  }
+
+  // OK
+  else {
     return new UrlStatus("ok", res.status);
   }
 }
