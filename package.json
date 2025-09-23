@@ -1,19 +1,22 @@
 {
   "name": "seo-website-audit",
   "version": "0.1.0",
-  "description": "Simple command line to perform SEO audits on a website",
-  "main": "dist/index.js",
+  "description": "Simple command line and API server to perform SEO audits on a website",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "node --no-warnings --loader ts-node/esm src/index.ts",
-    "dev:watch": "nodemon --no-warnings --watch src --exec npm run dev"
+    "audit": "node dist/cmd/audit.js",
+    "server": "node dist/cmd/server.js",
+    "dev:audit": "node --no-warnings --loader ts-node/esm src/cmd/audit.ts",
+    "dev:audit:watch": "nodemon --no-warnings --watch src --exec npm run dev:audit",
+    "dev:server": "node --no-warnings --loader ts-node/esm src/cmd/server.ts",
+    "dev:server:watch": "nodemon --no-warnings --watch src --exec npm run dev:server"
   },
   "keywords": [
     "seo",
     "audit",
     "command line",
+    "api",
     "search engine optimization"
   ],
   "author": "Stanton Creative Media LLC.",
@@ -26,6 +29,7 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
+    "@types/prompts": "^2.4.9",
     "@types/xml2js": "^0.4.14",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
