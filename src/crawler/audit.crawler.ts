@@ -1,7 +1,24 @@
 import { Dataset, PlaywrightCrawler, type Configuration } from "crawlee";
 
+import type { Page } from "playwright";
 import { config as defaultConfig } from "../config.js";
 import { evaluateRules, type SeoRule } from "../rules/index.js";
+
+/**
+ * Gather All Links On Page
+ *
+ * @param {Page} page
+ * @returns {Promise<string[]>}
+ */
+const gatherPageLinks = async (page: Page) => {
+  const linksFound = await page.$$eval("a[href]", (anchors) =>
+    anchors
+      .map((a) => (a as HTMLAnchorElement).href)
+      .filter((href) => !href.startsWith("mailto:") && !href.startsWith("tel:"))
+  );
+
+  return linksFound;
+};
 
 /**
  * Gets a crawler for performing an audit
@@ -21,12 +38,7 @@ export const getAuditCrawler = (
     ...config,
     async requestHandler({ request, page, enqueueLinks }) {
       const seoReport = await evaluateRules(page, seoRules);
-
-      // Gathering Additional Links
-      const eqLinks = await enqueueLinks();
-      const processedLinks = eqLinks.processedRequests.map((r) => r.requestId);
-      const unprocessedLinks = eqLinks.unprocessedRequests.map((r) => r.url);
-      const linksFound = [...processedLinks, ...unprocessedLinks];
+      const linksFound = await gatherPageLinks(page);
 
       // Adding To Dataset
       await Dataset.pushData({
@@ -34,6 +46,9 @@ export const getAuditCrawler = (
         linksFound: linksFound,
         seoReport,
       });
+
+      // Enqueue Internal Links
+      await enqueueLinks();
     },
 
     async failedRequestHandler({ request, error }) {
