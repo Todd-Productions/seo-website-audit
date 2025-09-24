@@ -1,8 +1,11 @@
 import { Dataset } from "crawlee";
 
+import { runLighthouse } from "../crawler/actions/lighthouse.js";
+import {
+  getSitemapUrl,
+  getUrlsFromSitemap,
+} from "../crawler/actions/sitemap.js";
 import { getAuditCrawler } from "../crawler/audit.crawler.js";
-import { runLighthouse } from "../lib/lighthouse.js";
-import { getSitemapUrl, getUrlsFromSitemap } from "../lib/sitemap.js";
 import { promptForLighthouse } from "../prompts/lighthouse.prompt.js";
 import { promptForWebsite } from "../prompts/website.prompt.js";
 
