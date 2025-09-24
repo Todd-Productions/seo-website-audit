@@ -23,3 +23,16 @@ pnpm exec playwright install # Possibly need to do this
    5. Check for missing alt tags
    6. Performs a lighthouse audit
 6. Generates a report of results (JSON) and performance score
+
+## Configuration
+
+The crawler can be configured by setting the following environment variables:
+
+---
+
+| Variable              | Description                                       | Default |
+| --------------------- | ------------------------------------------------- | ------- |
+| CRAWL_MAX_REQUESTS    | The maximum number of requests to make per crawl  | 500     |
+| CRAWL_MAX_CONCURRENCY | The maximum number of concurrent requests to make | 5       |
+
+---
