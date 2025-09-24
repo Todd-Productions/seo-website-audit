@@ -1,3 +1,4 @@
+import { Dataset } from "crawlee";
 import { getAuditCrawler } from "../crawler/audit.crawler.js";
 import { getSitemapUrl, getUrlsFromSitemap } from "../lib/sitemap.js";
 import { promptForWebsite } from "../prompts/website.prompt.js";
@@ -22,7 +23,6 @@ import { promptForWebsite } from "../prompts/website.prompt.js";
   // Start Crawling
   await crawler.run(startUrls);
 
-  // Compare Crawled Pages To Sitemap URLs
-  console.log(await crawler.getRequestQueue());
-  //   const crawledPages = await crawler.getRequestQueue();
+  // Get All Scraped Data
+  console.log(await Dataset.getData());
 })();

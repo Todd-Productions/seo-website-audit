@@ -36,3 +36,8 @@ The crawler can be configured by setting the following environment variables:
 | CRAWL_MAX_CONCURRENCY | The maximum number of concurrent requests to make | 5       |
 
 ---
+
+## Feature Ideas
+
+- [ ] Prompt to turn on/off SEO rules
+- [ ] Have WordPress check on site

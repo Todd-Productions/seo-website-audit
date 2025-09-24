@@ -22,13 +22,18 @@ export const getAuditCrawler = (
     async requestHandler({ request, page, enqueueLinks }) {
       const seoReport = await evaluateRules(page, seoRules);
 
+      // Gathering Additional Links
+      const eqLinks = await enqueueLinks();
+      const processedLinks = eqLinks.processedRequests.map((r) => r.requestId);
+      const unprocessedLinks = eqLinks.unprocessedRequests.map((r) => r.url);
+      const linksFound = [...processedLinks, ...unprocessedLinks];
+
+      // Adding To Dataset
       await Dataset.pushData({
         url: request.loadedUrl,
+        linksFound: linksFound,
         seoReport,
       });
-
-      // enqueue internal links
-      await enqueueLinks();
     },
 
     async failedRequestHandler({ request, error }) {
