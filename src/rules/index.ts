@@ -1,32 +1,30 @@
+import type { Page } from "playwright";
+
 export type SeoRule = {
   name: string;
   weight: number;
-  check: (page: any) => Promise<{ success: boolean; message?: string }>;
+  check: (page: Page) => Promise<{ success: boolean; message?: string }>;
 };
 
-// Example rules
-export const titleRule: SeoRule = {
-  name: "Title Tag",
-  weight: 3,
-  check: async (page) => {
-    const title = await page.title();
-    if (title && title.length > 0) {
-      return { success: true };
-    } else {
-      return { success: false, message: "Missing title tag" };
-    }
-  },
-};
+/**
+ * Evaluate a set of rules against a page
+ *
+ * @param {Page} page
+ * @param {SeoRule[]} rules
+ * @returns {Promise<{results: any[], weightedScore: number}>}
+ */
+export async function evaluateRules(page: Page, rules: SeoRule[]) {
+  let score = 0;
+  let maxScore = 0;
+  const results = [];
 
-export const metaDescriptionRule: SeoRule = {
-  name: "Meta Description",
-  weight: 2,
-  check: async (page) => {
-    const description = await page
-      .$eval('meta[name="description"]', (el) => el.getAttribute("content"))
-      .catch(() => null);
+  for (const rule of rules) {
+    const result = await rule.check(page);
+    results.push({ rule: rule.name, ...result });
+    maxScore += rule.weight;
+    if (result.success) score += rule.weight;
+  }
 
-    if (description) return { success: true };
-    return { success: false, message: "Missing meta description" };
-  },
-};
+  const weightedScore = maxScore > 0 ? (score / maxScore) * 100 : 0;
+  return { results, weightedScore };
+}

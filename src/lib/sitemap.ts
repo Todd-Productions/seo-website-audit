@@ -19,11 +19,7 @@ export async function getSitemapUrl(url: string): Promise<string | null> {
       const res = await axios.get(sitemapUrl);
       if (res.status === 200) return sitemapUrl;
     } catch (err) {
-      // Ensure we log as string
-      console.log(
-        "Sitemap fetch failed:",
-        err instanceof Error ? err.message : JSON.stringify(err)
-      );
+      // Not found
     }
   }
 
