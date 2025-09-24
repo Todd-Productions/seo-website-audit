@@ -24,5 +24,8 @@ import { promptForWebsite } from "../prompts/website.prompt.js";
   await crawler.run(startUrls);
 
   // Get All Scraped Data
-  console.log(await Dataset.getData());
+  const data = await Dataset.getData();
+  console.log(data);
+
+  // Run Lighthouse Audit
 })();

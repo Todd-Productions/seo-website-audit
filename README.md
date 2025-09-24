@@ -41,3 +41,4 @@ The crawler can be configured by setting the following environment variables:
 
 - [ ] Prompt to turn on/off SEO rules
 - [ ] Have WordPress check on site
+- [ ] Have accessibility check on each page

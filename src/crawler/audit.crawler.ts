@@ -11,7 +11,8 @@ import { evaluateRules, type SeoRule } from "../rules/index.js";
  * @returns {Promise<string[]>}
  */
 const gatherPageLinks = async (page: Page) => {
-  const linksFound = await page.$$eval("a[href]", (anchors) =>
+  const locator = await page.locator("a[href]");
+  const linksFound = locator.evaluateAll((anchors) =>
     anchors
       .map((a) => (a as HTMLAnchorElement).href)
       .filter((href) => !href.startsWith("mailto:") && !href.startsWith("tel:"))
