@@ -1,13 +1,6 @@
-import dotenv from "dotenv";
-import path from "path";
-
 import { getAuditCrawler } from "../crawler/audit.crawler.js";
 import { getSitemapUrl, getUrlsFromSitemap } from "../lib/sitemap.js";
 import { promptForWebsite } from "../prompts/website.prompt.js";
-
-// Initialize Environment Variables
-const envPath = path.resolve(__dirname, "../../.env");
-dotenv.config({ path: envPath });
 
 (async () => {
   const website = await promptForWebsite();
