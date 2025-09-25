@@ -1,25 +1,9 @@
 import { Dataset, PlaywrightCrawler, type Configuration } from "crawlee";
 
-import type { Page } from "playwright";
 import { config as defaultConfig } from "../config.js";
-import { evaluateRules, type SeoRule } from "../rules/index.js";
-
-/**
- * Gather All Links On Page
- *
- * @param {Page} page
- * @returns {Promise<string[]>}
- */
-const gatherPageLinks = async (page: Page) => {
-  const locator = await page.locator("a[href]");
-  const linksFound = locator.evaluateAll((anchors) =>
-    anchors
-      .map((a) => (a as HTMLAnchorElement).href)
-      .filter((href) => !href.startsWith("mailto:") && !href.startsWith("tel:"))
-  );
-
-  return linksFound;
-};
+import { evaluate } from "../rules/evaluate.js";
+import { type SeoRule } from "../rules/rules.js";
+import { gatherPageLinks } from "./actions/links.js";
 
 /**
  * Gets a crawler for performing an audit
@@ -38,7 +22,7 @@ export const getAuditCrawler = (
   const crawler = new PlaywrightCrawler({
     ...config,
     async requestHandler({ request, page, enqueueLinks }) {
-      const seoReport = await evaluateRules(page, seoRules);
+      const seoReport = await evaluate(page, seoRules);
       const linksFound = await gatherPageLinks(page);
 
       // Adding To Dataset

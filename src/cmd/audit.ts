@@ -32,7 +32,6 @@ import { promptForWebsite } from "../prompts/website.prompt.js";
 
   // Get All Scraped Data
   const data = await Dataset.getData();
-  console.log(data);
 
   // Run Lighthouse Audit
   if (doLighthouse) {
@@ -43,4 +42,6 @@ import { promptForWebsite } from "../prompts/website.prompt.js";
     console.log(`Performance Score: ${performanceScore}`);
     console.log(`Accessibility Score: ${accessibilityScore}`);
   }
+
+  // Compile Output (with scores)
 })();

@@ -1,10 +1,6 @@
 import type { Page } from "playwright";
 
-export type SeoRule = {
-  name: string;
-  weight: number;
-  check: (page: Page) => Promise<{ success: boolean; message?: string }>;
-};
+import { RuleLevel, type SeoRule } from "./rules.js";
 
 /**
  * Evaluate a set of rules against a page
@@ -13,7 +9,7 @@ export type SeoRule = {
  * @param {SeoRule[]} rules
  * @returns {Promise<{results: any[], weightedScore: number}>}
  */
-export async function evaluateRules(page: Page, rules: SeoRule[]) {
+export async function evaluate(page: Page, rules: SeoRule[]) {
   let score = 0;
   let maxScore = 0;
   const results = [];
@@ -21,8 +17,9 @@ export async function evaluateRules(page: Page, rules: SeoRule[]) {
   for (const rule of rules) {
     const result = await rule.check(page);
     results.push({ rule: rule.name, ...result });
-    maxScore += rule.weight;
-    if (result.success) score += rule.weight;
+    const weight = Number(RuleLevel[rule.level]);
+    maxScore += weight;
+    if (result.success) score += weight;
   }
 
   const weightedScore = maxScore > 0 ? (score / maxScore) * 100 : 0;
