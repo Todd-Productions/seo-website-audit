@@ -1,5 +1,7 @@
 import { Dataset } from "crawlee";
 
+import { hasMetaDescription } from "src/rules/hasMetaDescription.rule.js";
+import { hasTitle } from "src/rules/hasTitle.rule.js";
 import { runLighthouse } from "../crawler/actions/lighthouse.js";
 import {
   getSitemapUrl,
@@ -24,8 +26,8 @@ import { promptForWebsite } from "../prompts/website.prompt.js";
     startUrls = smPages.length ? smPages : [website];
   }
 
-  // Setup Crawler
-  const crawler = getAuditCrawler([]);
+  // Setup Crawler with SEO Rules
+  const crawler = getAuditCrawler([hasTitle, hasMetaDescription]);
 
   // Start Crawling
   await crawler.run(startUrls);
