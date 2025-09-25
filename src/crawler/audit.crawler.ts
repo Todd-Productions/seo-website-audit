@@ -1,9 +1,11 @@
 import { Dataset, PlaywrightCrawler, type Configuration } from "crawlee";
 
 import { config as defaultConfig } from "../config.js";
-import { evaluate } from "../rules/evaluate.js";
-import { type SeoRule } from "../rules/rules.js";
+import { evaluateSEORules } from "../lib/evaluate.js";
 import { gatherPageLinks } from "./actions/links.js";
+
+import { type SEORule } from "../types/rules.js";
+import type { ScrapedData } from "../types/scrape.js";
 
 /**
  * Gets a crawler for performing an audit
@@ -11,7 +13,7 @@ import { gatherPageLinks } from "./actions/links.js";
  * @param {SEORule[]} seoRules
  */
 export const getAuditCrawler = (
-  seoRules: SeoRule[],
+  seoRules: SEORule[],
   _config?: Configuration
 ) => {
   const config = _config || {
@@ -22,25 +24,31 @@ export const getAuditCrawler = (
   const crawler = new PlaywrightCrawler({
     ...config,
     async requestHandler({ request, page, enqueueLinks }) {
-      const seoReport = await evaluate(page, seoRules);
+      const seoReport = await evaluateSEORules(page, seoRules);
       const linksFound = await gatherPageLinks(page);
 
       // Adding To Dataset
-      await Dataset.pushData({
+      const crawlData: ScrapedData = {
         url: request.loadedUrl,
         linksFound: linksFound,
         seoReport,
-      });
+      };
+
+      await Dataset.pushData(crawlData);
 
       // Enqueue Internal Links
       await enqueueLinks();
     },
 
     async failedRequestHandler({ request, error }) {
-      await Dataset.pushData({
-        url: request.loadedUrl,
-        error: error instanceof Error ? error.message : JSON.stringify(error),
-      });
+      // TODO: Implement Failed Request
+      console.log("Failed Request:", request.loadedUrl);
+      console.log(error);
+
+      // await Dataset.pushData({
+      //   url: request.loadedUrl,
+      //   error: error instanceof Error ? error.message : JSON.stringify(error),
+      // });
     },
   });
 

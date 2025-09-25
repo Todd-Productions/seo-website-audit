@@ -6,10 +6,14 @@ import {
   getUrlsFromSitemap,
 } from "../crawler/actions/sitemap.js";
 import { getAuditCrawler } from "../crawler/audit.crawler.js";
+import { evaluatePageMetrics } from "../lib/evaluate.js";
 import { promptForLighthouse } from "../prompts/lighthouse.prompt.js";
 import { promptForWebsite } from "../prompts/website.prompt.js";
 import { hasMetaDescription } from "../rules/hasMetaDescription.rule.js";
 import { hasTitle } from "../rules/hasTitle.rule.js";
+
+import { type SEORule } from "../types/rules.js";
+import { type ScrapedData } from "../types/scrape.js";
 
 (async () => {
   const website = await promptForWebsite();
@@ -27,14 +31,15 @@ import { hasTitle } from "../rules/hasTitle.rule.js";
   }
 
   // Setup Crawler with SEO Rules
-  const crawler = getAuditCrawler([hasTitle, hasMetaDescription]);
+  const rules: SEORule[] = [hasTitle, hasMetaDescription];
+  const crawler = getAuditCrawler(rules);
 
   // Start Crawling
   await crawler.run(startUrls);
 
   // Get All Scraped Data
   const data = await Dataset.getData();
-  console.log(data);
+  const pageData = data.items as ScrapedData[];
 
   // Run Lighthouse Audit
   if (doLighthouse) {
@@ -46,5 +51,7 @@ import { hasTitle } from "../rules/hasTitle.rule.js";
     console.log(`Accessibility Score: ${accessibilityScore}`);
   }
 
-  // Compile Output (with scores)
+  // Get Page Metrics
+  const pageMetrics = evaluatePageMetrics(pageData, rules);
+  console.log(pageMetrics);
 })();

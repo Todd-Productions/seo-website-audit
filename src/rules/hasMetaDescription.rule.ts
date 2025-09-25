@@ -1,8 +1,8 @@
-import { type SeoRule } from "./rules.js";
+import { type SEORule } from "../types/rules.js";
 
 import { rules } from "./rules.js";
 
-export const hasMetaDescription: SeoRule = {
+export const hasMetaDescription: SEORule = {
   ...rules.hasMetaDescription,
 
   check: async (page) => {

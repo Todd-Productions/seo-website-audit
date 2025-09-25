@@ -1,16 +1,4 @@
-import type { Page } from "playwright";
-
-export enum RuleLevel {
-  ERROR = 3,
-  WARNING = 2,
-  NOTICE = 1,
-}
-
-export type SeoRule = {
-  name: string;
-  level: RuleLevel;
-  check: (page: Page) => Promise<{ success: boolean; message?: string }>;
-};
+import { RuleLevel } from "../types/rules.js";
 
 /**
  * Centralize list of rules here
