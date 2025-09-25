@@ -1,7 +1,5 @@
 import { Dataset } from "crawlee";
 
-import { hasMetaDescription } from "src/rules/hasMetaDescription.rule.js";
-import { hasTitle } from "src/rules/hasTitle.rule.js";
 import { runLighthouse } from "../crawler/actions/lighthouse.js";
 import {
   getSitemapUrl,
@@ -10,6 +8,8 @@ import {
 import { getAuditCrawler } from "../crawler/audit.crawler.js";
 import { promptForLighthouse } from "../prompts/lighthouse.prompt.js";
 import { promptForWebsite } from "../prompts/website.prompt.js";
+import { hasMetaDescription } from "../rules/hasMetaDescription.rule.js";
+import { hasTitle } from "../rules/hasTitle.rule.js";
 
 (async () => {
   const website = await promptForWebsite();
@@ -34,6 +34,7 @@ import { promptForWebsite } from "../prompts/website.prompt.js";
 
   // Get All Scraped Data
   const data = await Dataset.getData();
+  console.log(data);
 
   // Run Lighthouse Audit
   if (doLighthouse) {
