@@ -1,6 +1,6 @@
 // TODO: This code is used for scoring the websites
 
-import type { SeoRule } from "../rules/evaluate.js";
+import type { SeoRule } from "../rules/rules.js";
 
 export type PageMetric = {
   url: string;
