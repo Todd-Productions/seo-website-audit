@@ -8,6 +8,7 @@ type PageMetric = {
 type BasePerformanceMetric = {
   name: string;
   level: RuleLevel;
+  passed: boolean;
 };
 
 type SitePerformanceMetric = BasePerformanceMetric & {

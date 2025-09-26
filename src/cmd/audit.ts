@@ -1,4 +1,4 @@
-import { Dataset } from "crawlee";
+import { Dataset, log } from "crawlee";
 
 import { runLighthouse } from "../crawler/actions/lighthouse.js";
 import {
@@ -7,6 +7,7 @@ import {
 } from "../crawler/actions/sitemap.js";
 import { getAuditCrawler } from "../crawler/audit.crawler.js";
 import { evaluatePageMetrics } from "../lib/evaluate.js";
+import { Timer } from "../lib/timer.js";
 import { promptForLighthouse } from "../prompts/lighthouse.prompt.js";
 import { promptForWebsite } from "../prompts/website.prompt.js";
 import { hasMetaDescription } from "../rules/hasMetaDescription.rule.js";
@@ -19,6 +20,8 @@ import { type ScrapedData } from "../types/scrape.js";
   const website = await promptForWebsite();
   const doLighthouse = await promptForLighthouse();
   const smURL = await getSitemapUrl(website); // TODO: Use the null value as a weighted score
+
+  const timer = new Timer();
 
   // Starting variables
   let startUrls: string[] = [website];
@@ -53,5 +56,9 @@ import { type ScrapedData } from "../types/scrape.js";
 
   // Get Page Metrics
   const pageMetrics = evaluatePageMetrics(pageData, rules);
-  console.log(pageMetrics);
+
+  log.info(JSON.stringify(pageMetrics));
+
+  const elapsed = timer.getElapsedTime();
+  console.log(`🏁 Finished in ${elapsed.minutes}m ${elapsed.seconds}s`);
 })();

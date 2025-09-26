@@ -44,10 +44,14 @@ export const evaluatePageMetrics = (
   rules: Rule[]
 ): PerformanceMetric[] => {
   return rules.map((rule) => {
+    let passed = true;
+
     const pages = data
       .map((page) => {
         const result = page.seoReport.results.find((r) => r.rule === rule.name);
         if (!result) return undefined; // Skip if no result
+        if (!result.success) passed = false;
+
         return {
           url: page.url,
           value: result.success,
@@ -58,6 +62,7 @@ export const evaluatePageMetrics = (
     return {
       name: rule.name,
       level: rule.level,
+      passed,
       pages,
     };
   });
