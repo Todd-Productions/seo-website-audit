@@ -1,4 +1,7 @@
 import { Dataset, log } from "crawlee";
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { runLighthouse } from "../crawler/actions/lighthouse.js";
 import {
@@ -37,15 +40,66 @@ import { AuditStatus, OutputFormat } from "../types/audit.js";
 import { type SEORule, type SiteRule } from "../types/rules.js";
 import { type ScrapedData } from "../types/scrape.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * Export audit results to JSON file
+ * Creates tmp/ directory if it doesn't exist
+ * Filename format: [domain]-[timestamp].json
+ */
+async function exportResultsToJson(
+  website: string,
+  results: any
+): Promise<string> {
+  try {
+    // Create tmp directory if it doesn't exist
+    const tmpDir = path.resolve(__dirname, "../../tmp");
+    await fs.mkdir(tmpDir, { recursive: true });
+
+    // Extract domain from website URL
+    const domain = new URL(website).hostname.replace(/^www\./, "");
+
+    // Create timestamp in ISO format, replacing colons with hyphens for filename
+    const timestamp = new Date().toISOString().replace(/:/g, "-").split(".")[0];
+
+    // Create filename: domain-timestamp.json
+    const filename = `${domain}-${timestamp}.json`;
+    const filePath = path.join(tmpDir, filename);
+
+    // Write JSON file
+    await fs.writeFile(filePath, JSON.stringify(results, null, 2), "utf-8");
+
+    return filePath;
+  } catch (error: any) {
+    logger.error(`Failed to export results to JSON: ${error.message}`, error);
+    throw error;
+  }
+}
+
 (async () => {
   try {
     logger.info("=== SEO Website Audit Tool ===");
     logger.info(`Debug mode: ${logger.isDebugEnabled() ? "ON" : "OFF"}`);
 
     const website = await promptForWebsite();
+
+    // Check if user cancelled the prompt
+    if (!website) {
+      console.log("\n👋 Audit cancelled by user");
+      process.exit(0);
+    }
+
     logger.info(`Target website: ${website}`);
 
     const outputFormat = await promptForOutputFormat();
+
+    // Check if user cancelled the prompt
+    if (!outputFormat) {
+      console.log("\n👋 Audit cancelled by user");
+      process.exit(0);
+    }
+
     logger.info(
       `Output format: ${
         outputFormat === OutputFormat.BY_PAGE ? "By Page" : "By Rule"
@@ -53,7 +107,17 @@ import { type ScrapedData } from "../types/scrape.js";
     );
 
     const doLighthouse = await promptForLighthouse();
+
+    // Check if user cancelled the prompt (doLighthouse can be false, so check for undefined)
+    if (doLighthouse === undefined) {
+      console.log("\n👋 Audit cancelled by user");
+      process.exit(0);
+    }
+
     logger.info(`Lighthouse audit: ${doLighthouse ? "Enabled" : "Disabled"}`);
+
+    // Initialize file logging
+    await logger.initializeFileLogging(website);
 
     const timer = new Timer();
 
@@ -204,6 +268,19 @@ import { type ScrapedData } from "../types/scrape.js";
       );
     }
 
+    // Export results to JSON file
+    logger.step("exportJSON", "Exporting results to JSON file");
+    try {
+      const exportPath = await exportResultsToJson(website, formattedResult);
+      logger.success(`Results exported to: ${exportPath}`);
+      console.log(`\n💾 Results saved to: ${exportPath}`);
+    } catch (error: any) {
+      logger.warn(`Failed to export JSON file: ${error.message}`);
+      console.log(
+        `\n⚠️  Warning: Could not save results to file (${error.message})`
+      );
+    }
+
     // Output Results
     console.log("\n" + "=".repeat(60));
     console.log(`📊 SEO Audit Results for ${website}`);
@@ -224,6 +301,15 @@ import { type ScrapedData } from "../types/scrape.js";
       `Audit completed in ${elapsed.minutes}m ${elapsed.seconds}s`
     );
     console.log(`\n🏁 Finished in ${elapsed.minutes}m ${elapsed.seconds}s`);
+
+    // Flush log buffer to ensure all logs are written
+    await logger.flushBuffer();
+
+    // Show log file location
+    const logFilePath = logger.getLogFilePath();
+    if (logFilePath) {
+      console.log(`📝 Log file saved to: ${logFilePath}`);
+    }
   } catch (error: any) {
     logger.error("Fatal error during audit", error);
     console.error("\n❌ Audit failed with error:");
@@ -232,6 +318,10 @@ import { type ScrapedData } from "../types/scrape.js";
       console.error("\nStack trace:");
       console.error(error.stack);
     }
+
+    // Flush log buffer even on error
+    await logger.flushBuffer();
+
     process.exit(1);
   }
 })();

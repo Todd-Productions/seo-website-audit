@@ -23,4 +23,18 @@ export const config = {
 
   // Debug mode
   debug: process.env.DEBUG === "true",
+
+  // Performance optimizations
+  blockResources: process.env.BLOCK_RESOURCES !== "false", // Default: true (block images, fonts, media)
+  blockImages: process.env.BLOCK_IMAGES !== "false", // Default: true
+  blockStylesheets: process.env.BLOCK_STYLESHEETS === "true", // Default: false (CSS might affect SEO)
+  blockFonts: process.env.BLOCK_FONTS !== "false", // Default: true
+  blockMedia: process.env.BLOCK_MEDIA !== "false", // Default: true (videos, audio)
+
+  // Wait strategy for page loads
+  // Options: "load" (full load), "domcontentloaded" (faster), "networkidle" (wait for network)
+  waitUntil: (process.env.WAIT_UNTIL || "domcontentloaded") as
+    | "load"
+    | "domcontentloaded"
+    | "networkidle",
 };

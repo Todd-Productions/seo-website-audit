@@ -40,6 +40,15 @@ export const getAuditCrawler = (
       launchOptions: {
         headless: true,
         timeout: defaultConfig.navigationTimeout,
+        // Performance: Disable unnecessary browser features
+        args: [
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-web-security",
+          "--disable-features=IsolateOrigins,site-per-process",
+        ],
       },
     },
 
@@ -53,6 +62,30 @@ export const getAuditCrawler = (
     maxRequestRetries: defaultConfig.maxRetries,
 
     async requestHandler({ request, page, enqueueLinks, response }) {
+      // Performance: Set up request interception for resource blocking
+      if (defaultConfig.blockResources) {
+        await page.route("**/*", (route) => {
+          const resourceType = route.request().resourceType();
+          const url = route.request().url();
+
+          // Block based on resource type
+          const shouldBlock =
+            (defaultConfig.blockImages &&
+              (resourceType === "image" || resourceType === "imageset")) ||
+            (defaultConfig.blockFonts && resourceType === "font") ||
+            (defaultConfig.blockMedia &&
+              (resourceType === "media" ||
+                url.match(/\.(mp4|webm|ogg|mp3|wav|flac|aac)$/i))) ||
+            (defaultConfig.blockStylesheets && resourceType === "stylesheet");
+
+          if (shouldBlock) {
+            logger.debug(`Blocking ${resourceType}: ${url}`);
+            route.abort();
+          } else {
+            route.continue();
+          }
+        });
+      }
       processedCount++;
       const url = request.loadedUrl || request.url;
 
@@ -159,7 +192,36 @@ export const getAuditCrawler = (
       if (isHtml) {
         try {
           logger.debug("Enqueueing internal links");
-          await enqueueLinks();
+
+          // Enqueue links with explicit strategy to ensure deduplication
+          // The 'same-domain' strategy ensures we only crawl internal links
+          // Crawlee automatically deduplicates URLs in the request queue
+          await enqueueLinks({
+            strategy: "same-domain",
+            // Transform URLs to normalize them (remove trailing slashes, fragments, etc.)
+            transformRequestFunction: (req) => {
+              // Normalize URL by removing trailing slash and fragment
+              let url = req.url;
+
+              // Remove fragment (hash)
+              const urlWithoutFragment = url.split("#")[0];
+              if (urlWithoutFragment) {
+                url = urlWithoutFragment;
+              }
+
+              // Remove trailing slash for consistency
+              if (url.endsWith("/") && url !== new URL(url).origin + "/") {
+                url = url.slice(0, -1);
+              }
+
+              req.url = url;
+              req.uniqueKey = url; // Ensure uniqueKey matches normalized URL
+
+              logger.debug(`Normalized URL for queue: ${url}`);
+              return req;
+            },
+          });
+
           logger.debug("Links enqueued successfully");
         } catch (err: any) {
           logger.warn(`Failed to enqueue links: ${err.message}`);
