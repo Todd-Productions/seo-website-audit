@@ -17,6 +17,9 @@ export type AuditMeta = {
   start: string; // ISO timestamp
   end: string; // ISO timestamp
   status: AuditStatus;
+  total_urls: number; // Total count of all URLs discovered (including PDFs, docs, all page types)
+  total_pages: number; // Count of HTML pages only (excludes PDFs/docs)
+  indexed_pages: number; // Count of pages likely indexed by search engines
 };
 
 /**

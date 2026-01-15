@@ -12,6 +12,7 @@ import {
 } from "../lib/evaluate.js";
 import { formatByPage, formatByRule } from "../lib/formatters.js";
 import { Timer } from "../lib/timer.js";
+import { isHtmlPage } from "../lib/urlClassifier.js";
 import { promptForLighthouse } from "../prompts/lighthouse.prompt.js";
 import { promptForOutputFormat } from "../prompts/outputFormat.prompt.js";
 import { promptForWebsite } from "../prompts/website.prompt.js";
@@ -78,9 +79,21 @@ import { type ScrapedData } from "../types/scrape.js";
 
   // Get All Scraped Data
   const data = await Dataset.getData();
-  const pageData = data.items as ScrapedData[];
+  const allData = data.items as ScrapedData[];
 
-  console.log(`✅ Crawled ${pageData.length} page(s)`);
+  // Calculate URL and page counts
+  const totalUrls = allData.length;
+  const htmlPages = allData.filter((item) => isHtmlPage(item.urlType));
+  const totalPages = htmlPages.length;
+  const indexedPages = htmlPages.filter((item) => item.isIndexable).length;
+
+  // Filter to only HTML pages for SEO evaluation
+  const pageData = htmlPages;
+
+  console.log(`✅ Discovered ${totalUrls} total URL(s)`);
+  console.log(`   - ${totalPages} HTML page(s)`);
+  console.log(`   - ${indexedPages} indexable page(s)`);
+  console.log(`   - ${totalUrls - totalPages} document(s) (PDFs, DOCs, etc.)`);
 
   // Evaluate Site-level Rules
   const crawledUrls = pageData.map((p) => p.url);
@@ -115,6 +128,9 @@ import { type ScrapedData } from "../types/scrape.js";
     start: timer.getStartTime(),
     end: timer.getCurrentTime(),
     status: AuditStatus.SUCCESS,
+    total_urls: totalUrls,
+    total_pages: totalPages,
+    indexed_pages: indexedPages,
   };
 
   // Format Output
@@ -144,6 +160,9 @@ import { type ScrapedData } from "../types/scrape.js";
   console.log(`📊 SEO Audit Results for ${website}`);
   console.log("=".repeat(60));
   console.log(`Overall Score: ${overallScore}/100`);
+  console.log(`Total URLs Discovered: ${totalUrls}`);
+  console.log(`HTML Pages: ${totalPages}`);
+  console.log(`Indexable Pages: ${indexedPages}`);
   console.log(
     `Format: ${outputFormat === OutputFormat.BY_PAGE ? "By Page" : "By Rule"}`
   );
