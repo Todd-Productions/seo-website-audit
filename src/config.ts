@@ -37,4 +37,11 @@ export const config = {
     | "load"
     | "domcontentloaded"
     | "networkidle",
+
+  // Server configuration
+  serverPort: parseInt(process.env.SERVER_PORT || "3000", 10),
+  mongodbUri: process.env.MONGODB_URI || "mongodb://localhost:27017/seo-audit",
+
+  // Job retention (in hours)
+  jobRetentionHours: parseInt(process.env.JOB_RETENTION_HOURS || "24", 10),
 };
