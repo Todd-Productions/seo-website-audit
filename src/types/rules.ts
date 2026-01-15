@@ -15,4 +15,28 @@ type SEORule = Rule & {
   check: (page: Page) => Promise<{ success: boolean; message?: string }>;
 };
 
-export { RuleLevel, type Rule, type SEORule };
+/**
+ * Site-level rule context
+ */
+type SiteRuleContext = {
+  baseUrl: string;
+  sitemapUrl: string | null;
+  crawledUrls: string[];
+};
+
+/**
+ * Site-level rule (runs once per audit)
+ */
+type SiteRule = Rule & {
+  check: (
+    context: SiteRuleContext
+  ) => Promise<{ success: boolean; message?: string }>;
+};
+
+export {
+  RuleLevel,
+  type Rule,
+  type SEORule,
+  type SiteRule,
+  type SiteRuleContext,
+};

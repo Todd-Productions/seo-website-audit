@@ -23,15 +23,19 @@ export const getAuditCrawler = (
 
   const crawler = new PlaywrightCrawler({
     ...config,
-    async requestHandler({ request, page, enqueueLinks }) {
+    async requestHandler({ request, page, enqueueLinks, response }) {
       const seoReport = await evaluateSEORules(page, seoRules);
       const linksFound = await gatherPageLinks(page);
 
+      // Get status code from response
+      const statusCode = response?.status();
+
       // Adding To Dataset
       const crawlData: ScrapedData = {
-        url: request.loadedUrl,
+        url: request.loadedUrl || request.url,
         linksFound: linksFound,
         seoReport,
+        statusCode,
       };
 
       await Dataset.pushData(crawlData);
@@ -41,14 +45,26 @@ export const getAuditCrawler = (
     },
 
     async failedRequestHandler({ request, error }) {
-      // TODO: Implement Failed Request
-      console.log("Failed Request:", request.loadedUrl);
+      console.log("Failed Request:", request.loadedUrl || request.url);
       console.log(error);
 
-      // await Dataset.pushData({
-      //   url: request.loadedUrl,
-      //   error: error instanceof Error ? error.message : JSON.stringify(error),
-      // });
+      // For failed requests, we still want to track them
+      // Create a minimal SEO report indicating failure
+      const failedReport = {
+        results: seoRules.map((rule) => ({
+          rule: rule.name,
+          success: false,
+          message: "Page failed to load",
+        })),
+        score: 0,
+      };
+
+      await Dataset.pushData({
+        url: request.loadedUrl || request.url,
+        linksFound: [],
+        seoReport: failedReport,
+        statusCode: undefined,
+      });
     },
   });
 

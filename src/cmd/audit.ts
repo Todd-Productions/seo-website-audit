@@ -6,59 +6,151 @@ import {
   getUrlsFromSitemap,
 } from "../crawler/actions/sitemap.js";
 import { getAuditCrawler } from "../crawler/audit.crawler.js";
-import { evaluatePageMetrics } from "../lib/evaluate.js";
+import {
+  calculateProportionalScore,
+  evaluateSiteRules,
+} from "../lib/evaluate.js";
+import { formatByPage, formatByRule } from "../lib/formatters.js";
 import { Timer } from "../lib/timer.js";
 import { promptForLighthouse } from "../prompts/lighthouse.prompt.js";
+import { promptForOutputFormat } from "../prompts/outputFormat.prompt.js";
 import { promptForWebsite } from "../prompts/website.prompt.js";
-import { hasMetaDescription } from "../rules/hasMetaDescription.rule.js";
-import { hasTitle } from "../rules/hasTitle.rule.js";
 
-import { type SEORule } from "../types/rules.js";
+// Page-level rules
+import { has4xxErrors } from "../rules/has4xxErrors.rule.js";
+import { has5xxErrors } from "../rules/has5xxErrors.rule.js";
+import { hasHTTPS } from "../rules/hasHTTPS.rule.js";
+import { hasMetaDescription } from "../rules/hasMetaDescription.rule.js";
+import { hasMixedContent } from "../rules/hasMixedContent.rule.js";
+import { hasRedirectLoops } from "../rules/hasRedirectLoops.rule.js";
+import { hasTitle } from "../rules/hasTitle.rule.js";
+import { titleTooLong } from "../rules/titleTooLong.rule.js";
+
+// Site-level rules
+import { hasRobotsTxt } from "../rules/hasRobotsTxt.rule.js";
+import { hasSitemapXml } from "../rules/hasSitemapXml.rule.js";
+import { sitemapComplete } from "../rules/sitemapComplete.rule.js";
+
+import { AuditStatus, OutputFormat } from "../types/audit.js";
+import { type SEORule, type SiteRule } from "../types/rules.js";
 import { type ScrapedData } from "../types/scrape.js";
 
 (async () => {
   const website = await promptForWebsite();
+  const outputFormat = await promptForOutputFormat();
   const doLighthouse = await promptForLighthouse();
-  const smURL = await getSitemapUrl(website); // TODO: Use the null value as a weighted score
+  const smURL = await getSitemapUrl(website);
 
   const timer = new Timer();
 
   // Starting variables
   let startUrls: string[] = [website];
-  let smPages = [];
+  let smPages: string[] = [];
 
-  // If website has a sitemap
+  // If website has a sitemap, use it; otherwise crawl from homepage
   if (smURL) {
     smPages = await getUrlsFromSitemap(smURL);
     startUrls = smPages.length ? smPages : [website];
+  } else {
+    console.log("No sitemap found. Crawling from homepage only.");
   }
 
-  // Setup Crawler with SEO Rules
-  const rules: SEORule[] = [hasTitle, hasMetaDescription];
-  const crawler = getAuditCrawler(rules);
+  // Setup Page-level SEO Rules
+  const pageRules: SEORule[] = [
+    hasTitle,
+    hasMetaDescription,
+    hasHTTPS,
+    hasMixedContent,
+    has4xxErrors,
+    has5xxErrors,
+    hasRedirectLoops,
+    titleTooLong,
+  ];
+
+  // Setup Site-level Rules
+  const siteRules: SiteRule[] = [hasRobotsTxt, hasSitemapXml, sitemapComplete];
+
+  const crawler = getAuditCrawler(pageRules);
 
   // Start Crawling
+  console.log(`🚀 Starting audit of ${website}...`);
   await crawler.run(startUrls);
 
   // Get All Scraped Data
   const data = await Dataset.getData();
   const pageData = data.items as ScrapedData[];
 
-  // Run Lighthouse Audit
+  console.log(`✅ Crawled ${pageData.length} page(s)`);
+
+  // Evaluate Site-level Rules
+  const crawledUrls = pageData.map((p) => p.url);
+  const siteRuleContext = {
+    baseUrl: website,
+    sitemapUrl: smURL,
+    crawledUrls,
+  };
+
+  const siteReport = await evaluateSiteRules(siteRuleContext, siteRules);
+
+  // Run Lighthouse Audit (optional)
   if (doLighthouse) {
-    // TODO: Finish this... only running on page now
+    console.log("🔍 Running Lighthouse audit...");
     const { seoScore, performanceScore, accessibilityScore } =
       await runLighthouse(website);
-    console.log(`SEO Score: ${seoScore}`);
-    console.log(`Performance Score: ${performanceScore}`);
-    console.log(`Accessibility Score: ${accessibilityScore}`);
+    console.log(`  SEO Score: ${seoScore}`);
+    console.log(`  Performance Score: ${performanceScore}`);
+    console.log(`  Accessibility Score: ${accessibilityScore}`);
   }
 
-  // Get Page Metrics
-  const pageMetrics = evaluatePageMetrics(pageData, rules);
+  // Calculate Overall Score
+  const overallScore = calculateProportionalScore(
+    pageData,
+    pageRules,
+    siteReport
+  );
 
-  log.info(JSON.stringify(pageMetrics));
+  // Create Audit Metadata
+  const auditMeta = {
+    runtime: timer.getFormattedRuntime(),
+    start: timer.getStartTime(),
+    end: timer.getCurrentTime(),
+    status: AuditStatus.SUCCESS,
+  };
+
+  // Format Output
+  let formattedResult;
+  if (outputFormat === OutputFormat.BY_PAGE) {
+    formattedResult = formatByPage(
+      website,
+      auditMeta,
+      overallScore,
+      pageData,
+      pageRules,
+      siteReport
+    );
+  } else {
+    formattedResult = formatByRule(
+      website,
+      auditMeta,
+      overallScore,
+      pageData,
+      pageRules,
+      siteReport
+    );
+  }
+
+  // Output Results
+  console.log("\n" + "=".repeat(60));
+  console.log(`📊 SEO Audit Results for ${website}`);
+  console.log("=".repeat(60));
+  console.log(`Overall Score: ${overallScore}/100`);
+  console.log(
+    `Format: ${outputFormat === OutputFormat.BY_PAGE ? "By Page" : "By Rule"}`
+  );
+  console.log("=".repeat(60) + "\n");
+
+  log.info(JSON.stringify(formattedResult, null, 2));
 
   const elapsed = timer.getElapsedTime();
-  console.log(`🏁 Finished in ${elapsed.minutes}m ${elapsed.seconds}s`);
+  console.log(`\n🏁 Finished in ${elapsed.minutes}m ${elapsed.seconds}s`);
 })();
